@@ -204,6 +204,38 @@ void LatticeContainer::Alloc(int nx_, int ny_, int nz_)
 	ALLOCPRINT2;
     CudaMemset( tmp, 0, size ); 
     NodeType = (flag_t*)tmp;
+	
+	/* QIBB stuff here */
+    size = (size_t) nx*ny*nz*sizeof(unsigned char);
+    //CudaMalloc( (void **)&tmp, size);    qibb = (unsigned char*)tmp;   prototype of the allocation code by Dmytro
+     CudaMalloc( (void **)&tmp, size);  q100 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q200 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q010 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q110 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q210 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q020 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q120 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q220 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q001 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q101 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q201 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q011 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q111 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q211 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q021 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q121 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q221 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q002 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q102 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q202 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q012 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q112 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q212 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q022 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q122 = (unsigned char*)tmp;    
+     CudaMalloc( (void **)&tmp, size);  q222 = (unsigned char*)tmp;    
+	
+	/* QIBB stuff ends here */
 
     size = (size_t) GLOBALS * sizeof(real_t);
 	ALLOCPRINT1;
@@ -221,6 +253,33 @@ void LatticeContainer::Alloc(int nx_, int ny_, int nz_)
 void LatticeContainer::Free()
 {
     CudaFree( NodeType );
+    CudaFree( q100 ); 
+    CudaFree( q200 ); 
+    CudaFree( q010 ); 
+    CudaFree( q110 ); 
+    CudaFree( q210 ); 
+    CudaFree( q020 ); 
+    CudaFree( q120 ); 
+    CudaFree( q220 ); 
+    CudaFree( q001 ); 
+    CudaFree( q101 ); 
+    CudaFree( q201 ); 
+    CudaFree( q011 ); 
+    CudaFree( q111 ); 
+    CudaFree( q211 ); 
+    CudaFree( q021 ); 
+    CudaFree( q121 ); 
+    CudaFree( q221 ); 
+    CudaFree( q002 ); 
+    CudaFree( q102 ); 
+    CudaFree( q202 ); 
+    CudaFree( q012 ); 
+    CudaFree( q112 ); 
+    CudaFree( q212 ); 
+    CudaFree( q022 ); 
+    CudaFree( q122 ); 
+    CudaFree( q222 ); 
+    
 }
 
 
@@ -420,7 +479,7 @@ CudaDeviceFunction void NodeToColor( int x, int y, int z, uchar4 *optr )
      w = v.y;
     }
 
-if (ISFINITE(l)) {
+if (isfinite(l)) {
 
     l = l * 111;
     if (               (l <-111)) {r = 255; g = 255; b = 255; }

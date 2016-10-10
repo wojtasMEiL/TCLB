@@ -71,13 +71,40 @@ public:
   double globals[GLOBALS]; ///< Table of Globals
   lbRegion region; ///< Local lattice region
   MPIInfo mpi; ///< MPI information
-  char snapFileName[STRING_LEN];
   Lattice (lbRegion region, MPIInfo, int);
   ~Lattice ();
   void MPIInit (MPIInfo);
   void Color(uchar4 *);
   int Offset(int,int,int);
   void FlagOverwrite(flag_t *, lbRegion);
+  /* QIBB extra stuff */
+  void  q100overwrite(unsigned char*, lbRegion); 
+  void  q200overwrite(unsigned char*, lbRegion); 
+    void  q010overwrite(unsigned char*, lbRegion); 
+    void  q110overwrite(unsigned char*, lbRegion); 
+    void  q210overwrite(unsigned char*, lbRegion); 
+    void  q020overwrite(unsigned char*, lbRegion); 
+    void  q120overwrite(unsigned char*, lbRegion); 
+    void  q220overwrite(unsigned char*, lbRegion); 
+    void  q001overwrite(unsigned char*, lbRegion); 
+    void  q101overwrite(unsigned char*, lbRegion); 
+    void  q201overwrite(unsigned char*, lbRegion); 
+    void  q011overwrite(unsigned char*, lbRegion); 
+    void  q111overwrite(unsigned char*, lbRegion); 
+    void  q211overwrite(unsigned char*, lbRegion); 
+    void  q021overwrite(unsigned char*, lbRegion); 
+    void  q121overwrite(unsigned char*, lbRegion); 
+    void  q221overwrite(unsigned char*, lbRegion); 
+    void  q002overwrite(unsigned char*, lbRegion); 
+    void  q102overwrite(unsigned char*, lbRegion); 
+    void  q202overwrite(unsigned char*, lbRegion); 
+    void  q012overwrite(unsigned char*, lbRegion); 
+    void  q112overwrite(unsigned char*, lbRegion); 
+    void  q212overwrite(unsigned char*, lbRegion); 
+    void  q022overwrite(unsigned char*, lbRegion); 
+    void  q122overwrite(unsigned char*, lbRegion); 
+    void  q222overwrite(unsigned char*, lbRegion); 
+  /* end of QIBB extra stuff */
   void Init();
   void listTabs(FTabs&, int*n, size_t ** size, void *** ptr, size_t * maxsize);
   int save(FTabs&, const char * filename);
@@ -152,7 +179,8 @@ public:
   <?R tp = "double" ?>
   void Get<?%s q$name ?>_<?%s tp ?>(lbRegion over, <?%s tp ?> * tab, int row);
 <?R }; ifdef() ?>
-  void updateAllSamples();
+  void updateAllSamples(real_t scale);
+  void butWhy();
   void getGlobals(real_t * tab); 
   void calcGlobals();
   void clearGlobals();

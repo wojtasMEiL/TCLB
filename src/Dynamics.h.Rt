@@ -5,3 +5,33 @@
     real_t <?%s n ?>; <?R
   } ?>
     flag_t NodeType; ///< Node flag/type
+    
+    // interpolation links for nodes with Geier QIBB - 0 to 200 store the ratio while 255 is the inactive one
+  /*
+    unsigned char q100; 
+    unsigned char q200; 
+    unsigned char q010; 
+    unsigned char q110; 
+    unsigned char q210; 
+    unsigned char q020; 
+    unsigned char q120; 
+    unsigned char q220; 
+    unsigned char q001; 
+    unsigned char q101; 
+    unsigned char q201; 
+    unsigned char q011; 
+    unsigned char q111; 
+    unsigned char q211; 
+    unsigned char q021; 
+    unsigned char q121; 
+    unsigned char q221; 
+    unsigned char q002; 
+    unsigned char q102; 
+    unsigned char q202; 
+    unsigned char q012; 
+    unsigned char q112; 
+    unsigned char q212; 
+    unsigned char q022; 
+    unsigned char q122; 
+    unsigned char q222; 
+    */

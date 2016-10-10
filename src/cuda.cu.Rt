@@ -46,12 +46,41 @@ CudaDeviceFunction CudaConstantMemory real_t <?%s v$name ?> = 0.0f; <?R
 #define <?%s f$nicename ?>(...) GET_MACRO(__VA_ARGS__, <?%s f$nicename ?>_3, <?%s f$nicename ?>_2)(__VA_ARGS__) <?R
         }
 ?>
-
 #define X (x_ + constContainer.px)
 #define Y (y_ + constContainer.py)
 #define Z (z_ + constContainer.pz)
 #define SyntheticTurbulence(t) constContainer.getST(t,x_,y_,z_)
 #define average_iter (constContainer.iter - constContainer.reset_iter)  //Look nicer in Dynamics
+
+// #define Qibb (constContainer.qibb[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) // QIBB prototype code by Dmytro
+#define	Q100	(constContainer.q100[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q200	(constContainer.q200[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q010	(constContainer.q010[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q110	(constContainer.q110[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q210	(constContainer.q210[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q020	(constContainer.q020[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q120	(constContainer.q120[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q220	(constContainer.q220[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q001	(constContainer.q001[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q101	(constContainer.q101[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q201	(constContainer.q201[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q011	(constContainer.q011[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q111	(constContainer.q111[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q211	(constContainer.q211[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q021	(constContainer.q021[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q121	(constContainer.q121[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q221	(constContainer.q221[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q002	(constContainer.q002[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q102	(constContainer.q102[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q202	(constContainer.q202[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q012	(constContainer.q012[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q112	(constContainer.q112[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q212	(constContainer.q212[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q022	(constContainer.q022[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q122	(constContainer.q122[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+#define	Q222	(constContainer.q222[ x_ + constContainer.nx*y_ + constContainer.nx*constContainer.ny*z_]) 
+
+
 <?R
 	for(s in rows(ZoneSettings)) { ?>
 //#define <?%s s$name ?> constContainer.ZoneSettings[<?%s s$Index ?> + ZONESETTINGS * (NodeType >> ZONE_SHIFT)][constContainer.ZoneIndex]
@@ -194,8 +223,6 @@ template <> struct Node_Run < <?%s T1 ?>, <?%s T2 ?>, <?%s T3 ?> > {
 	} <?R
 		if (! tp$adjoint) { ?>
 	#include "Dynamics.h" <?R
-		} else { ?>
-	#undef DYNAMICS_B_LOADED <?R
 		} ?>
 //	#include "Dynamics.h"
 #ifdef CALC_DOUBLE_PRECISION

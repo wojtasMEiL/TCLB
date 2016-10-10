@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="320" ny="64" nz="64">
+		<MRT><Box/></MRT>
+		<WVelocityBB name="Inlet"><Box nx="1" dx="1"/></WVelocityBB>
+		<CoutVelocity><Box nx="1" dx="-1"/></CoutVelocity>
+                <PCoutVelocity><Box nx="1" dx="-2"/></PCoutVelocity> 
+		<Wall mask="ALL">
+                        <Sphere dx="64" nx="32" dy="16" ny="32" dz="16" nz="32"/>
+			 <Sphere dx="128" nx="32" dy="16" ny="32" dz="16" nz="32"/>
+		</Wall>
+		<XYslice1><Box dx="5"  nx="1"/></XYslice1>
+		<XZslice1><Box dx="-5" nx="1"/></XZslice1>
+	</Geometry>
+	<Model>
+		<Params Velocity="0.01"/>
+		<Params nu="0.0005"/>
+		<Params GalileanCorrection="1"/> 
+	</Model>
+	<Failcheck Iterations="2000"/>
+	<VTK Iterations="500"/>
+	<Log Iterations="500"/>
+	<Solve Iterations="750000"/>
+<SaveBinary file="bc_testing_"/>
+</CLBConfig>

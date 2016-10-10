@@ -1,16 +1,8 @@
-#include "Consts.h"
-#ifdef EMBEDED_PYTHON
-    #include "Python.h"
-    #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#endif
-
-
-
 #include <stdlib.h>
 #include <cstring>
 #include <iostream>
 #include "pugixml.hpp"
-
+#include "Consts.h"
 #include "cross.h"
 #include "types.h"
 #include "Region.h"
@@ -19,7 +11,6 @@
 #include "def.h"
 #include "vtkOutput.h"
 #include "utils.h"
-#include "spline.h"
 #include <assert.h>
 
 /// Main constructor
@@ -31,9 +22,64 @@
 Geometry::Geometry(const lbRegion & r, const UnitEnv & units_):region(r), units(units_)
 {
     geom = new flag_t[region.sizeL()];
+	q100= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q200= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q010= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q110= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q210= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q020= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q120= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q220= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q001= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q101= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q201= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q011= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q111= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q211= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q021= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q121= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q221= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q002= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q102= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q202= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q012= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q112= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q212= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q022= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q122= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+        q222= (unsigned char*) malloc(region.sizeL()*sizeof(unsigned char));  
+
     for (size_t i = 0; i < region.sizeL(); i++) {
 	geom[i] = 0;
+	    //qibb 255 stands for not active direction
+	q100[i] = 255; 
+        q200[i] = 255; 
+        q010[i] = 255; 
+        q110[i] = 255; 
+        q210[i] = 255; 
+        q020[i] = 255; 
+        q120[i] = 255; 
+        q220[i] = 255; 
+        q001[i] = 255; 
+        q101[i] = 255; 
+        q201[i] = 255; 
+        q011[i] = 255; 
+        q111[i] = 255; 
+        q211[i] = 255; 
+        q021[i] = 255; 
+        q121[i] = 255; 
+        q221[i] = 255; 
+        q002[i] = 255; 
+        q102[i] = 255; 
+        q202[i] = 255; 
+        q012[i] = 255; 
+        q112[i] = 255; 
+        q212[i] = 255; 
+        q022[i] = 255; 
+        q122[i] = 255; 
+        q222[i] = 255; 
     }
+    
     output("Creating geom size:%ld\n", region.sizeL());
     SettingZones["DefaultZone"] = 0;
 }
@@ -53,22 +99,6 @@ int Geometry::val(pugi::xml_attribute attr, int def)
 	return def;
     } else {
 	return myround(units.alt(attr.value(), def));
-    }
-}
-
-/// Return rounded unit-free value of an xml attribute
-/**
-        Get the value of an xml attribute, calculate the units
-        and round the result to full integer
-        \param attr XML attribute
-        \param def Default value to return in case there is no such attribute
-*/
-double Geometry::val(pugi::xml_attribute attr, double def)
-{
-    if (!attr) {
-	return def;
-    } else {
-	return units.alt(attr.value(), def);
     }
 }
 
@@ -130,7 +160,6 @@ int Geometry::setFlag(const pugi::char_t * name)
     }
     fg = node.attribute("value").as_int();
     E(setMask(node.attribute("mask").value()));
-    fg_mode = MODE_OVERWRITE;
     return 0;
 }
 
@@ -150,26 +179,6 @@ int Geometry::setMask(const pugi::char_t * name)
     }
     fg_mask = node.attribute("value").as_int(-1);
     return 0;
-}
-
-/// Set the forground flag mode
-/**
-        Set the foreground flag mode, by which the forground flag will be set
-        \param name Name of the flag mask/NodeType to set
-*/
-int Geometry::setMode(const pugi::char_t * mode)
-{
-	if (strcmp(mode, "overwrite") == 0) {
-		fg_mode = MODE_OVERWRITE;
-	} else if (strcmp(mode, "fill") == 0) {
-		fg_mode = MODE_FILL;
-	} else if (strcmp(mode, "change") == 0) {
-		fg_mode = MODE_CHANGE;
-	} else {
-		error("Unknown mode (in xml): %s\n", mode);
-		return -1;
-	}
-	return 0;
 }
 
 int Geometry::setZone(const pugi::char_t * name)
@@ -290,14 +299,52 @@ inline flag_t Geometry::Dot(int x, int y, int z)
 {
     if (region.isIn(x, y, z)) {
 	int i = region.offset(x, y, z);
-	if (geom[i] & fg_mask) {
-		if (fg_mode == MODE_FILL) return NODE_None;
-	} else {
-		if (fg_mode == MODE_CHANGE) return NODE_None;
-	}
 	return geom[i] = (geom[i] & (~fg_mask)) | fg;
     } else 
     return NODE_None;
+}
+
+/// Fill a node with foreground flag
+inline flag_t Geometry::QibbDot(LBMdataQ26 data)
+{
+	
+	int x = data.p[0];
+	int y = data.p[1];
+	int z = data.p[2];
+	
+    if (region.isIn(x, y, z)){
+	int i = region.offset(x, y, z);
+	q100[i] = data.q26[0];
+	q010[i] = data.q26[1];
+	q200[i] = data.q26[2];
+	q020[i] = data.q26[3];
+	q001[i] = data.q26[4];
+	q002[i] = data.q26[5];
+	q110[i] = data.q26[6];
+	q210[i] = data.q26[7];
+	q220[i] = data.q26[8];
+	q120[i] = data.q26[9];
+	q101[i] = data.q26[10];
+	q011[i] = data.q26[11];
+	q201[i] = data.q26[12];
+	q021[i] = data.q26[13];
+	q102[i] = data.q26[14];
+	q012[i] = data.q26[15];
+	q202[i] = data.q26[16];
+	q022[i] = data.q26[17];
+	q111[i] = data.q26[18];
+	q211[i] = data.q26[19];
+	q221[i] = data.q26[20];
+	q121[i] = data.q26[21];
+	q112[i] = data.q26[22];
+	q212[i] = data.q26[23];
+	q222[i] = data.q26[24];
+	q122[i] = data.q26[25];
+	return geom[i] = (geom[i] & (~fg_mask)) | NODE_QIBB; // I am not sure if that works...
+	
+    } else 
+    return NODE_None;
+    
 }
 
 /// Check if a point is inside a sphere
@@ -506,61 +553,6 @@ inline int Geometry::loadSTL(lbRegion reg, pugi::xml_node n)
 }
 
 
-/// Load a b-spline string
-inline int Geometry::loadSweep(lbRegion reg, pugi::xml_node node)
-{
-	pugi::xml_attribute attr;
-
-	int order=1;
-	attr = node.attribute("order");
-	if (attr) order = attr.as_int();
-	double dl=1e-3;
-	attr = node.attribute("step");
-	if (attr) dl = attr.as_double();
-	attr = node.attribute("steps");
-	if (attr) dl = 1/units.alt(attr.value());
-	double def_r=1;
-	attr = node.attribute("r");
-	if (attr) def_r = units.alt(attr.value());
-	
-	int n = 0;
-	std::vector<double> nx,ny,nz,nr;
-	for (pugi::xml_node par = node.first_child(); par; par = par.next_sibling()) {
-		if (strcmp(par.name(),"Point") == 0) {
-			nx.push_back(units.alt(par.attribute("x").value()));
-			ny.push_back(units.alt(par.attribute("y").value()));
-			nz.push_back(units.alt(par.attribute("z").value()));
-			nr.push_back(val(par.attribute("r"),def_r));
-			n++;
-		} else {
-			NOTICE("Unknown element %s in Sweep\n", par.name());
-		}
-	}
-	if (n == 0) {
-		NOTICE("No points in Sweep\n");
-		return 0;
-	}
-	if (order > n-1) {
-		NOTICE("For order %d b-spline you need at least %d points\n", order, order+1);
-		order = n-1;
-	}
-    output("Making a Sweep over region (%ld) with %lf step\n",reg.size(), dl);
-    for (int x = reg.dx; x < reg.dx + reg.nx; x++)
-	for (int y = reg.dy; y < reg.dy + reg.ny; y++)
-	    for (int z = reg.dz; z < reg.dz + reg.nz; z++) {
-		for (double l=0;l<1; l+= dl) {
-			double x0 = bspline(l, nx, order);
-			double y0 = bspline(l, ny, order);
-			double z0 = bspline(l, nz, order);
-			double r = bspline(l, nr, order);
-			if ((x-x0)*(x-x0)+(y-y0)*(y-y0)+(z-z0)*(z-z0) < r*r) {
-			    Dot(x, y, z);
-			}
-		}
-	    }
-
-	return 0;	
-}
 
 
 /// Main geometry-generating function
@@ -599,84 +591,8 @@ int Geometry::Draw(pugi::xml_node & node)
 			    Dot(x, y, z);
 			}
 		    }
-    } else if (strcmp(n.name(), "OffgridSphere") == 0) {
-
-        double x0 = units.alt(n.attribute("x").value());
-        double y0 = units.alt(n.attribute("y").value());
-        double z0 = units.alt(n.attribute("z").value());
-
-        double Rx,Ry,Rz;
-        if ( n.attribute("R").empty() ){
-           Rx = units.alt(n.attribute("Rx").value());
-           Ry = units.alt(n.attribute("Ry").value());
-           Rz = units.alt(n.attribute("Rz").value());
-        } else {
-           double R = units.alt(n.attribute("R").value());
-           Rx = R;
-           Ry = R;
-           Rz = R;
-        }
-
-        double Rx2 = Rx*Rx;
-        double Ry2 = Ry*Ry;
-        double Rz2 = Rz*Rz;
-   
-        reg.dx = x0 - Rx - 5;
-        reg.dy = y0 - Ry - 5;
-        reg.dz = z0 - Rz - 5;
-
-        reg.nx = 2*Rx + 10;
-        reg.ny = 2*Ry + 10;
-        reg.nz = 2*Rz + 10;
-
-	    debug1("Filling sphere with flag %d (%d)\n, with center at (%lf,%lf,%lf) and radius (%lf,%lf,%lf)", fg, fg_mask, x0, y0, z0, Rx,Ry,Rz);
-	    DEBUG1(reg.print();)
-		for (int x = reg.dx; x < reg.dx + reg.nx; x++)
-		for (int y = reg.dy; y < reg.dy + reg.ny; y++)
-		    for (int z = reg.dz; z < reg.dz + reg.nz; z++) {
-               double xx =  (.5 + x - x0);  
-               double yy =  (.5 + y - y0);  
-               double zz =  (.5 + z - z0);  
-			   if ( xx*xx/Rx2 + yy*yy/Ry2 + zz*zz/Rz2 < 1. ) {
-			    Dot(x, y, z);
-			   }
-		}
-	}  else if (strcmp(n.name(), "OffgridPipe") == 0) {
-
-        double x0 = units.alt(n.attribute("x").value());
-        double y0 = units.alt(n.attribute("y").value());
-        double z0 = units.alt(n.attribute("z").value());
-
-        double Rx,Ry;
-        if ( n.attribute("R").empty() ){
-           Rx = units.alt(n.attribute("Rx").value());
-           Ry = units.alt(n.attribute("Ry").value());
-        } else {
-           double R = units.alt(n.attribute("R").value());
-           Rx = R;
-           Ry = R;
-        }
-
-        double Rx2 = Rx*Rx;
-        double Ry2 = Ry*Ry;
-   
-        reg.dx = x0 - Rx - 5;
-        reg.dy = y0 - Ry - 5;
-
-        reg.nx = 2*Rx + 10;
-        reg.ny = 2*Ry + 10;
-	    debug1("Filling Z-pipe  with flag %d (%d)\n, with center at (%lf,%lfi,%f) and radius (%lf,%lf)", fg, fg_mask, x0, y0, z0, Rx,Ry);
-	    DEBUG1(reg.print();)
-		for (int x = reg.dx; x < reg.dx + reg.nx; x++)
-		for (int y = reg.dy; y < reg.dy + reg.ny; y++)
-		    for (int z = reg.dz; z < reg.dz + reg.nz; z++) {
-               double xx =  (.5 + x - x0);  
-               double yy =  (.5 + y - y0);  
-			   if ( xx*xx/Rx2 + yy*yy/Ry2 < 1. ) {
-			    Dot(x, y, z);
-			   }
-		}
-	} else if (strcmp(n.name(),"Pipe") == 0) {
+	}    
+    else if (strcmp(n.name(),"Pipe") == 0) {
 	    debug1("Filling pipe with flag %d (&d)\n",fg,fg_mask);
 	    DEBUG1(reg.print();)
             for (int x = reg.dx; x < reg.dx + reg.nx; x++)
@@ -698,88 +614,20 @@ int Geometry::Draw(pugi::xml_node & node)
 			if (inWedge((x - reg.dx) / (reg.nx - 1.), (y - reg.dy) / (reg.ny - 1.), (z - reg.dz) / (reg.nz - 1.), type)) {
 			    Dot(x, y, z);
 			}
-         }
-    } else if (strcmp(n.name(), "PythonInline") == 0) {
-        #ifdef EMBEDED_PYTHON
-        
-        Py_Initialize();
-
-        // Make sure the GIL has been created since we need to acquire it in our
-        // callback to safely call into the python application.
-        if (! PyEval_ThreadsInitialized()) {
-            PyEval_InitThreads();
-        }
-        
-        PyObject *pGlobal;
-        PyObject* pyModule, *pLocal, *pValue;
-
-        PyGILState_STATE state;
-        state = PyGILState_Ensure();
-   
-        pyModule = PyImport_AddModule("__main__"); 
-        pLocal = PyModule_GetDict(pyModule);
-        pGlobal = PyModule_GetDict(pyModule);
-
-
-
-        pValue = PyRun_String( n.child_value(), Py_file_input, pGlobal, pLocal );
-        if (pValue == NULL){
-             error("Provided Python code is not executable or does not contain 'test' function");    
-        }
-
-        PyObject* pFunc = PyObject_GetAttrString(pyModule, "test"); ;
-        Py_INCREF(pFunc);
-        Py_DECREF(pValue);
-
-
-        if (pFunc && PyCallable_Check(pFunc)) {
-            PyObject* pArgs;
-            pArgs = PyTuple_New(3);
-  
-            for (int x = reg.dx; x < reg.dx + reg.nx; x++)
-        	for (int y = reg.dy; y < reg.dy + reg.ny; y++)
-	            for (int z = reg.dz; z < reg.dz + reg.nz; z++) {
-
-                    PyTuple_SetItem( pArgs, 0, PyFloat_FromDouble((x-reg.dx)/(real_t)reg.nx));
-                    PyTuple_SetItem( pArgs, 1, PyFloat_FromDouble((y-reg.dy)/(real_t)reg.ny));
-                    PyTuple_SetItem( pArgs, 2, PyFloat_FromDouble((z-reg.dz)/(real_t)reg.nz));
-           
-                    //Call my function, passing it the number four
-                    pValue = PyObject_CallObject(pFunc, pArgs);
-
-           			if (  PyInt_AsLong(pValue) == 1 ) {
-   			             Dot(x, y, z);
-		            }
-                 
-                 }   
-            Py_DECREF(pArgs);
-        } else {
-            error("Provided Python code is not executable or does not contain 'test' function");        
-        }
-
-
-        Py_DECREF(pValue);
-        Py_XDECREF(pFunc);
-        Py_DECREF(pGlobal);
-        Py_DECREF(pLocal);
-        PyGILState_Release(state);
-        Py_Finalize();   
-
-        #else
-            error("You need to compile PYTHON support for this geometry element");
-        #endif
-
+		    }
 	} else if (strcmp(n.name(), "STL") == 0) {
 	    debug1("Filling stl geometry with flag %d (%d)\n", fg, fg_mask);
 	    DEBUG1(reg.print();)
 		if (loadSTL(reg, n))
 		return -1;
-	} else if (strcmp(n.name(), "Sweep") == 0) {
-		debug1("Filling a sweep geometry with flag %d (%d)\n", fg, fg_mask);
-		DEBUG1(reg.print();)
-		if (loadSweep(reg, n))
+	}
+	else if (strcmp(n.name(), "QIBB") == 0){
+		debug1("  [QIBB] Reading QIBB data\n");
+		output("  [QIBB] Reading QIBB data\n");
+		if (loadQIBBdata(reg, n))
 		return -1;
-	} else if (strcmp(n.name(), "Text") == 0) {
+	}
+	else if (strcmp(n.name(), "Text") == 0) {
 	    lbRegion crop = getRegion(n.parent());
 	    crop = region.intersect(crop);
 	    crop.print();
@@ -817,6 +665,70 @@ int Geometry::Draw(pugi::xml_node & node)
 	}
     }
     return 0;
+}
+
+/// Load data for interpolated bounce-back - binary file format has to be used
+inline int Geometry::loadQIBBdata(lbRegion reg, pugi::xml_node n)
+{
+	
+	// FILE *f = fopen(n.attribute("file").value(), "rb"); //read binary data
+	 if (!n.attribute("file")) {
+	error("No 'file' attribute in 'QIBB' element in xml conf\n");
+	return -1;
+	}
+	else { 
+		output( "  [QIBB] reading %s...", n.attribute("file").value());
+		FILE *f = fopen(n.attribute("file").value(), "rb");
+		
+		if (f == NULL) {
+		error("'QIBB' element: %s doesn't exists or cannot be opened\n", n.attribute("file").value());
+		return -1;
+		}
+		
+		fseek(f, 0, SEEK_END); // seek to end of file
+		long int size = ftell(f); // get current file pointer
+		
+		int N = size/50; // LBMdataQ26 size is 50
+		
+		fseek(f, 0, SEEK_SET); // seek back to beginning of file
+		output( "  [QIBB] size of data is %d and %d entries are stored\n", size, N );
+		
+		/* now proper QIBB reading takes place: */
+		
+		/* 1. Memory gets allocated */
+		LBMdataQ26* ndata = (LBMdataQ26 *)malloc(N*sizeof(LBMdataQ26));
+		/* 2. Data is read */
+		int ret;
+		ret = fread(ndata, N, sizeof(LBMdataQ26), f);
+		
+		/* end of QIBB reading */
+		fclose(f);
+		
+		/* Testing 1. - print data
+		
+		for(int i=0; i < N; ++i){
+		PrintLBMdataQ26(ndata[i]);
+		}  */
+		
+		/* Testing 2. - overwrite with standard flag (for now) */
+		 for(int i=0; i < N; ++i){
+			QibbDot(ndata[i]);
+		}
+		free(ndata);
+		}
+    
+    return 0;
+	
+}
+
+//QIBB necessary for debig
+void Geometry::PrintLBMdataQ26(LBMdataQ26 data){
+	
+	output(" [PrintLBMdataQ26] node: %d %d %d\n", data.p[0], data.p[1], data.p[2]);
+	for(int i=0; i < 26; ++i)  output(" [%2d] %3d;",i+1,data.q26[i]);
+
+	output("\n");
+	
 }
 
 /// Loades Zone definition
@@ -859,8 +771,6 @@ int Geometry::load(pugi::xml_node & node)
 	        E(setZone(attr.value()));
 	    } else if (strcmp(attr.name(), "mask") == 0) {
 	        E(setMask(attr.value()));
-	    } else if (strcmp(attr.name(), "mode") == 0) {
-	        E(setMode(attr.value()));
 	    } else {
 	        
 	    }

@@ -108,7 +108,6 @@ void MainFree( Solver *d);
 		strcpy(_confname,info.conffile);
 		stripbare(_confname);
 		sprintf(info.outpath, "%s%s", out, _confname);
-		if (lattice != NULL) sprintf(lattice->snapFileName, "%s%s_Snap", out, _confname);
 		NOTICE("Setting output path to: %s\n", info.outpath);
 	}
 
@@ -125,7 +124,7 @@ void MainFree( Solver *d);
                     f = fopen(filename, "wt");
                     assert( f != NULL );
 			
-                    fprintf(f,"\"Iteration\",\"Time_si\",\"Walltime\",\"Optimization\"");
+                    fprintf(f,"\"Iteration\",\"Time_si\",\"Optimization\"");
 		    <?R for (v in Settings$name) { ?>
 	                    fprintf(f,",\"<?%s v ?>\",\"<?%s v ?>_si\"");
 		    <?R } ?>
@@ -174,7 +173,7 @@ void MainFree( Solver *d);
 			int j=0;
 	                f = fopen(filename, "at");  
 	                assert( f != NULL );
-			fprintf(f,"%d, %.13le, %.13le, %d",iter, LogScales[SETTINGS+GLOBALS+ZONESETTINGS+SCALES_dt] * iter, get_walltime(), opt_iter);
+			fprintf(f,"%d, %.13le, %d",iter, LogScales[SETTINGS+GLOBALS+SCALES_dt] * iter, opt_iter);
 			for (int i=0; i< SETTINGS; i++) {
 				v = lattice->settings[i];
 				fprintf(f,", %.13le, %.13le",v,v*LogScales[j]);
@@ -371,14 +370,11 @@ void MainFree( Solver *d);
 	        	NOTICE("Running graphics at %dx%d\n", region.nx, region.ny);
 			bitmap = new GPUAnimBitmap( region.nx, region.ny, this );
 			RunMainLoop();
-			debug0("Graphics done");
 	        #endif
 	
 		// Creating Lattice (GPU allocation is here)
-		debug0("Creating Lattice object ...");
 		lattice = new Lattice(region, mpi, ns);
-	   	debug0("Lattice done");
-
+	   
 <?R for (s in rows(ZoneSettings)) { ?>
 		lattice->zSet.set(<?%s s$Index ?>, -1, units.alt("<?%s s$default ?>"));
 <?R } ?>
@@ -534,72 +530,15 @@ int Solver::getComponentIntoBuffer(const char* comp, real_t* &buf, long int*  di
 <?R
 } 
 ?>
-    if (!somethingWritten){
-        output("Possible densities:\n");
-    <?R
-        for (d in rows(DensityAll)) { 
-            ?> output("-> <?%s d$name ?>\n") ; <?R
-        }
-    ?>
-    }
     assert(somethingWritten);
     if (somethingWritten) {
-        output("...provided %s\n", comp);
+        output("...privided %s\n", comp);
     } else { 
      	output("...not saved %s\n", comp);
     }
 //    int sizes[7] = { n, region.dx, region.dy, region.dz, region.nx, region.ny, region.nz };
 	return n;
 } 
-int Solver::getQuantitieIntoBuffer(const char* comp, real_t* &buf, long int*  dim, long int*  offsets ) {
-	int n = region.size();
-
-	dim[0] = region.nx;
-	dim[1] = region.ny;
-	dim[2] = region.nz;
-    dim[3] = 1;
-
-    
-    offsets[0] = region.dx;
-    offsets[1] = region.dy;
-    offsets[2] = region.dz;
-
-	output("Providing quantitie %s to buffer..\n", comp);
-    bool somethingWritten = false;
-<?R 
-for (q in rows(Quantities)){ ifdef(q$adjoint); 
-?>
-	if (strcmp(comp, "<?%s q$name ?>") == 0) {
-    	<?%s q$type ?>* tmp_<?%s q$name ?> = new <?%s q$type ?>[n];
-        <?R if (q$type == 'vector_t') { ?>
-            dim[3] = 3;
-        <?R } ?>
-    	lattice->Get<?%s q$name ?>(region, tmp_<?%s q$name ?>, 1);
-        buf = (real_t*)tmp_<?%s q$name ?>;
-        somethingWritten = true; 
-    }
-<?R
-} 
-ifdef();
-?>
-    if (!somethingWritten){
-        output("Possible quantities:\n");
-    <?R
-        for (d in rows(Quantities)) { 
-            ?> output("-> <?%s d$name ?>\n") ; <?R
-        }
-    ?>
-    }
-    assert(somethingWritten);
-    if (somethingWritten) {
-        output("...provided %s\n", comp);
-    } else { 
-     	output("...not saved %s\n", comp);
-    }
-//    int sizes[7] = { n, region.dx, region.dy, region.dz, region.nx, region.ny, region.nz };
-	return n;
-} 
-
 
 int Solver::loadComponentFromBuffer(const char* comp,  real_t* buf) {
 	int n = region.size();

@@ -194,7 +194,7 @@ void Lattice::startRecord()
 	}
 	{
 		char filename[STRING_LEN];
-		sprintf(filename, "%s_%02d_%02d.dat", snapFileName, D_MPI_RANK, getSnap(0));
+		sprintf(filename, "Snap_%02d_%02d.dat", D_MPI_RANK, getSnap(0));
 		iSnaps[getSnap(0)] = 0;
 		save(Snaps[Snap], filename);
 	}
@@ -445,8 +445,9 @@ inline void Lattice::<?%s FunName ?>(int tab0, int tab1, int iter_type)
 <?R if (stage$fixedPoint) { ?> } // for(fix) <?R } ?>
 <?R } ?>
 	Snap = tab1;
+	lbRegion damn;
 	MarkIteration();
-	updateAllSamples();	
+	updateAllSamples(1.0);	
 };
 
 /// Adjoint Iteration
@@ -544,7 +545,7 @@ inline void Lattice::<?%s FunName ?>_Opt(int tab0, int tab1, int adjtab0, int ad
 {
 #ifdef ADJOINT
         <?%s FunName ?>(tab0, tab1, iter_type);
-        <?%s FunName ?>_Adj(tab0, tab1, adjtab0, adjtab1, iter_type | ITER_STEADY);
+        <?%s FunName ?>_Adj(tab0, tab1, adjtab0, adjtab1, iter_type);
         container->RunInterior< Optimize, NoGlobals, <?%s stage$name ?> > (kernelStream);
         container->RunBorder< Optimize, NoGlobals, <?%s stage$name ?> > (kernelStream); 
         CudaDeviceSynchronize();
@@ -683,9 +684,7 @@ void Lattice::Init()
    MPI_Barrier(MPI_COMM_WORLD);
    Action_Init(1,0,ITER_NO);
    MPI_Barrier(MPI_COMM_WORLD);
-	Iter = 0;
-	container->iter = 0;
-	clearGlobals();
+
 //   Stream();
 //   container->Init();
 //   Stream();
@@ -725,7 +724,7 @@ void Lattice::IterateTill(int it, int iter_type)
 		if (reverse_save) {
 			debug2("Reverse Adjoint Disk Read it:%d level:%d\n", mx, imx);
 			char filename[STRING_LEN];
-			sprintf(filename, "%s_%02d_%02d.dat", snapFileName, D_MPI_RANK, imx);
+			sprintf(filename, "Snap_%02d_%02d.dat", D_MPI_RANK, imx);
 			if (load(Snaps[0], filename)) exit(-1);
 		} else {
 			ERROR("I have to read from disk, but reverse_save is not switched on\n");
@@ -748,7 +747,7 @@ void Lattice::IterateTill(int it, int iter_type)
 			if (reverse_save) {
 				debug2("Reverse Adjoint Disk Write it:%d level:%d\n", i+1, s2);
 				char filename[STRING_LEN];
-				sprintf(filename, "%s_%02d_%02d.dat", snapFileName, D_MPI_RANK, s2);
+				sprintf(filename, "Snap_%02d_%02d.dat", D_MPI_RANK, s2);
 				save(Snaps[0], filename);
 			}
 		}
@@ -892,6 +891,301 @@ void Lattice::FlagOverwrite(flag_t * mask, lbRegion over)
         }
 
 }
+
+ void Lattice::q100overwrite(unsigned char* q, lbRegion over)
+{
+//	debug1("Overwriting flags of mesh (%lud b)\n", region.nx*region.ny*sizeof(flag_t));
+//	CudaMemcpy2D(container->NodeType, sizeof(flag_t), mask, sizeof(flag_t), sizeof(flag_t), region.nx*region.ny, cudaMemcpyHostToDevice);
+	lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q100[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+ void Lattice::q200overwrite(unsigned char* q, lbRegion over ){ 
+	 lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q200[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+ void Lattice::q010overwrite(unsigned char* q, lbRegion over ){ 
+	 lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q010[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+ void Lattice::q110overwrite(unsigned char* q, lbRegion over ){ 
+	 lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q110[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+ void Lattice::q210overwrite(unsigned char* q, lbRegion over ){ 
+	 lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q210[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+ void Lattice::q020overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q020[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+ void Lattice::q120overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q120[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q220overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q220[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q001overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q001[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q101overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q101[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q201overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q201[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q011overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q011[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q111overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q111[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q211overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q211[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q021overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q021[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q121overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q121[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q221overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q221[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q002overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q002[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q102overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q102[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q202overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q202[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q012overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q012[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q112overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q112[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q212overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q212[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q022overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q022[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q122overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q122[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
+    void Lattice::q222overwrite(unsigned char* q, lbRegion over ){ lbRegion inter = region.intersect(over);
+//        debug1("Overwriting flags of mesh (%ld b) %dx%dx%d+%d,%d,%d \n", inter.sizeL()*sizeof(flag_t), inter.nx, inter.ny, inter.nz, inter.dx, inter.dy, inter.dz);
+        int x = inter.dx;
+        for (int y = inter.dy; y<inter.dy+inter.ny; y++)
+        for (int z = inter.dz; z<inter.dz+inter.nz; z++)
+        {
+                CudaMemcpy2D(&container->q222[region.offsetL(x,y,z)], sizeof(unsigned char), &q[over.offsetL(x,y,z)], sizeof(unsigned char), sizeof(unsigned char), inter.nx, cudaMemcpyHostToDevice);
+        }
+
+}
+
 
 /// Get NodeType's from a region
 void Lattice::GetFlags(lbRegion over, flag_t * NodeType)
@@ -1172,28 +1466,21 @@ void Lattice::resetAverage() {
 	 <?R } ?>
 } 
 <?R for (q in rows(Quantities)) { ifdef(q$adjoint); ?>
-void Lattice::GetSample<?%s q$name ?>(lbRegion over, real_t scale,real_t* buf)
+void Lattice::GetSample<?%s q$name ?>(lbRegion small, real_t scale,real_t* buf)
 {	
        	container->in = Snaps[Snap];
        	<?R if (q$adjoint) { ?> container->adjin = aSnaps[aSnap]; <?R } ?>
        	container->CopyToConst();
-	lbRegion small = region.intersect(over);
 	CudaKernelRun( get<?%s q$name ?> , dim3(small.nx,small.ny) , dim3(1) , (small, (<?%s q$type?>*) buf, scale));
 }
 <?R } ;ifdef() ?>
-void Lattice::updateAllSamples(){
- if (sample->size != 0) {
-	for (size_t j = 0; j < sample->spoints.size(); j++) {
-		if (mpi.rank == sample->spoints[j].rank) { 
-		<?R for (q in rows(Quantities)) { ifdef(q$adjoint); ?>
-	 	 if (sample->quant->in("<?%s q$name ?>"))
-		{
-                        double v = sample->units.alt("<?%s q$unit ?>");
-			GetSample<?%s q$name ?>(sample->spoints[j].location,1/v,&sample->gpu_buffer[sample->location["<?%s q$name ?>"]+(container->iter - sample->startIter)*sample->size + sample->totalIter*j*sample->size]);
-		}
-		<?R }; ifdef() ?>	 
-	} }
- }
+void Lattice::updateAllSamples(real_t scale){
+       <?R if (any((NodeTypes$name) == "CoutVelocity")) {  ?>
+		if (sample->size == 0) {
+			CudaMalloc((void**)&sample->gpu_buffer,<?%s nrow(subset(Fields,grepl("f",Fields$name))) ?>*mpi.totalregion.ny*mpi.totalregion.nz*sizeof(real_t));
+			sample->size = 1 ;
+		   }
+		container->Buff_sampler = sample->gpu_buffer;
+  	 <?R } ?>
 }
-
 

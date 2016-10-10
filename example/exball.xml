@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="100" ny="200">
+		<MRT><Box/></MRT>
+	</Geometry>
+	<Model>
+		<Params Velocity="0.005"/>
+		<Params nu="0.00002"/>
+	</Model>
+	<VTK/>
+	<Failcheck Iterations="5000"/>
+	<VTK Iterations="5000"/>
+	<Solve Iterations="10000/>
+</CLBConfig>

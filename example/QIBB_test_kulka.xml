@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="128" ny="64" nz="64">
+		<MRT><Box/></MRT>
+		<QIBB>
+			<QIBB file="example/sphere_r18_at_x32y32z32.bin"/>
+		</QIBB>
+		<XYslice1><Box dx="5"  nx="1"/></XYslice1>
+		<XZslice1><Box dx="-5" nx="1"/></XZslice1>
+	</Geometry>
+	<Model>
+		<Params ForceX="1e-6"/>
+		<Params nu="0.001"/>
+		<Params GalileanCorrection="1"/> 
+	</Model>
+	<Failcheck Iterations="1000"/>
+	<VTK Iterations="5000"/>
+	<Log Iterations="100"/>
+	<Solve Iterations="40000"/>
+<SaveBinary file="QIBB_test_kulka"/>
+</CLBConfig>

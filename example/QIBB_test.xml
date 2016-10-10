@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="192" ny="32" nz="32">
+		<MRT><Box/></MRT>
+		<WVelocityBB name="Inlet"><Box nx="1" dx="1"/></WVelocityBB>
+		<CoutVelocity><Box nx="1" dx="-1"/></CoutVelocity>
+                <PCoutVelocity><Box nx="1" dx="-2"/></PCoutVelocity> 	
+		<Wall mask="ALL">
+                        <Sphere dx="64" nx="32" dy="32" ny="32" dz="32" nz="32"/>
+			<QIBB file="example/testLBMdata.bin"/>
+		</Wall>
+		<XYslice1><Box dx="5"  nx="1"/></XYslice1>
+		<XZslice1><Box dx="-5" nx="1"/></XZslice1>
+	</Geometry>
+	<Model>
+		<Params Velocity="0.006"/>
+		<Params nu="0.001"/>
+		<Params GalileanCorrection="1"/> 
+	</Model>
+	<Failcheck Iterations="1"/>
+	<VTK Iterations="1"/>
+	<Log Iterations="5"/>
+	<Solve Iterations="10"/>
+<SaveBinary file="QIBB_test"/>
+</CLBConfig>

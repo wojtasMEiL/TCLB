@@ -78,17 +78,10 @@ AC_ARG_WITH([python],
 	AC_HELP_STRING([--with-python],
 		[Enable CallPython handler, requires python-dev]))
 
-AC_ARG_WITH([python_config],
-	AC_HELP_STRING([--with-python-config],
-		[Set python(2)-config binary to call]))
-
-
 AC_ARG_ENABLE([paranoid],
 	AC_HELP_STRING([--enable-paranoid],
 		[Makes GCC paranoid.]))
-AC_ARG_ENABLE([profiling],
-	AC_HELP_STRING([--enable-profiling],
-		[enable profiling for R in rtemplate]))		
+			
 NVFLAGS=""
 
 # Checks for programs.
@@ -244,13 +237,13 @@ CPPFLAGS="${CPPFLAGS} -I${MPI_INCLUDE}"
 
 
 if  test "x${with_python}" == "xyes"; then
-   
-    AC_CHECK_PROG(python_config,"${with_python_config}","${with_python_config}",python-config)
-    
-    AC_MSG_NOTICE([python config: ${python_config}])
+    AC_CHECK_PROG(PC,[python-config],[yes],[no])
+    if test "x${PC}" == "xyes"; then
+        python_config="python-config"
+    fi
 
-    AC_MSG_CHECKING([python embandinng: linker flags])
-    PF=$(${python_config} --ldflags)
+    AC_MSG_CHECKING([Python Embandinng: linker flags])
+    PF=$($python_config --ldflags)
     LDFLAGS="${LDFLAGS} ${PF}"
     AC_MSG_RESULT([${PF}])
     
@@ -260,7 +253,6 @@ if  test "x${with_python}" == "xyes"; then
     CPP_OPT="${CPPFLAGS} ${PF}"
     EMBEDED_PYTHON=1
     AC_MSG_RESULT([${PF}])
-	AC_DEFINE([EMBEDED_PYTHON], [1], [Using Python support])
 fi
 
 
@@ -446,21 +438,14 @@ then
 	LDFLAGS="${LDFLAGS} -fprofile-arcs -ftest-coverage"
 fi
 
-CP=cp
 if test "x${enable_marklines}" == "xyes"
 then
 	RTOPT="${RTOPT} --mark-lines"
-	CP=./tools/cp_line
 fi
 
 if test "x${enable_paranoid}" == "xyes"
 then
 	CPP_OPT="${CPP_OPT} -Wall -Werror -Wno-unused-but-set-variable -Wno-unused-variable"
-fi
-
-if test "x${enable_profiling}" == "xyes"
-then
-	RTOPT="${RTOPT} -p"
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -478,7 +463,6 @@ fi
 #AC_FUNC_STRTOD
 #AC_CHECK_FUNCS([floor memmove memset pow sqrt strchr strstr strtol strtoul])
 
-AC_SUBST(CP)
 AC_SUBST(NVFLAGS)
 AC_SUBST(CROSS_CPU)
 AC_SUBST(PV_BUILD)

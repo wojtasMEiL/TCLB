@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="2048" ny="1400">
+		<MRT><Box/></MRT>
+		<WVelocity name="Inlet"><Box nx="1" dx="1"/></WVelocity>
+		<CoutVelocity><Box nx="1" dx="-1"/></CoutVelocity>
+                <PCoutVelocity><Box nx="1" dx="-2"/></PCoutVelocity> 	
+		<Wall mask="ALL">
+                        <Sphere dy="600" ny="32" dx="200" nx="32"/>
+		</Wall>
+	</Geometry>
+	<Model>
+		<Params Velocity="0.005"/>
+		<Params nu="0.00002"/>
+		<Params InletTemperature="1"
+			InitTemperature="0"
+			FluidAlfa="0.01"
+			SolidAlfa="0.166"
+			Coriolis="0.001"
+			Tension="0.01"
+			EOSScale="0.05"
+			PressDiffInObj="1"
+			Smag="0.16"
+		/>
+	</Model>
+	<Failcheck Iterations="10000"/>
+	<VTK Iterations="1000"/>
+	<Solve Iterations="10000"/>
+</CLBConfig>

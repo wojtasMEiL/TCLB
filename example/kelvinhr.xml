@@ -1,0 +1,39 @@
+<?xml version="1.0"?> <!--Following Geier's Doctoral Thesis example for Cascaded LBM -->
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="128" ny="128" nz ="128">
+		<MRT><Box/></MRT>
+		<None name="top">
+			<Box dy="0" ny="64"/>
+		</None>
+		<None name="bot">
+			<Box dy="-64" ny="64"/>
+		</None>
+		<None name="instab">
+			<Box dx="102" dy="44" dz="62" nx="1" nz="1" ny="1"/> <!-- Coordinates generated in R using runif -->
+			<Box dx="106" dy="43" dz="110" nx="1" nz="1" ny="1"/>
+		</None> 
+	</Geometry>
+	<Model>
+		<Params Velocity-top="0.01"/>
+		<Params Velocity-bot="-0.01"/>
+		<Params Velocity-instab="0"/>
+		<Params nu="0.000000000002"/>
+		<Params InletTemperature="1"
+			InitTemperature="0"
+			FluidAlfa="0.01"
+			SolidAlfa="0.166"
+			Coriolis="0.001"
+			Tension="0.01"
+			EOSScale="0.05"
+			PressDiffInObj="1"
+			Smag="0.16"
+			GalileanCorrection="1.0"
+			/>
+	</Model>
+	<VTK/>
+	<Average Iterations="5002"/>
+	<Failcheck Iterations="4500"/>
+	<VTK Iterations="5000"/> 
+	<Solve Iterations="80000"/>
+<SaveBinary file="kelvinhr"/>
+</CLBConfig>

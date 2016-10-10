@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="32" ny="32" nz="32">
+		<MRT><Box/></MRT>
+		<QIBB>
+			<QIBB file="example/plane.bin"/>
+		</QIBB>
+		<XYslice1><Box dx="5"  nx="1"/></XYslice1>
+		<XZslice1><Box dx="-5" nx="1"/></XZslice1>
+	</Geometry>
+	<Model>
+		<Params ForceX="2e-8"/>
+		<Params nu="0.001"/>
+		<Params GalileanCorrection="1"/> 
+	</Model>
+	<Failcheck Iterations="10000"/>
+	<VTK Iterations="10000"/>
+	<Log Iterations="1000"/>
+	<Solve Iterations="1500000"/>
+</CLBConfig>
