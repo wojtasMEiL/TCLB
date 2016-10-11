@@ -37,12 +37,44 @@ CudaDeviceFunction vector_t getU(){
 	u.z = (u.z + ForceZ/2.)/d;
 	return u;
 }
-
-// required to get the values of the wall in the output - for now, only sum is stored
-CudaDeviceFunction real_t getqibb_test(){
-	return (int)Q222 + (int)Q122 + (int)Q022 + (int)Q212 + (int)Q112 + (int)Q012 + (int)Q202 + (int)Q102 + (int)Q002 + (int)Q221 + (int)Q121 + (int)Q021 + (int)Q211 + (int)Q111 + (int)Q011 + (int)Q201 + (int)Q101 + (int)Q001 + (int)Q220 + (int)Q120 + (int)Q020 + (int)Q210 + (int)Q110 + (int)Q010 + (int)Q200 + (int)Q100;
+#ifdef avgUX
+CudaDeviceFunction real_t getaverageP(){
+	return avgP;
 }
-
+CudaDeviceFunction real_t getDissipation(){
+        real_t diss;
+       	diss = nu*((avgdxu2/average_iter)-(avgUX(1,0,0) - avgUX(-1,0,0))*(avgUX(1,0,0) - avgUX(-1,0,0))/(4*average_iter*average_iter));
+       	diss = diss + nu*((avgdyv2/average_iter) -(avgUY(0,1,0) - avgUY(0,-1,0))*(avgUY(0,1,0) - avgUY(0,-1,0))/(4*average_iter*average_iter));
+       	diss = diss + nu*((avgdzw2/average_iter) - (avgUZ(0,0,1) - avgUZ(0,0,-1))*(avgUZ(0,0,1) - avgUZ(0,0,-1))/(4*average_iter*average_iter));
+        return diss;
+}
+CudaDeviceFunction vector_t getavgU(){
+        vector_t u;
+        u.x = avgUX(0,0,0)/average_iter;  //avgUX(0,0,0) in fact
+        u.y = avgUY(0,0,0)/average_iter;
+        u.z = avgUZ(0,0,0)/average_iter;
+        return u;
+}
+CudaDeviceFunction vector_t getvarU(){
+        vector_t u;
+        u.x = varUX/average_iter - getavgU().x*getavgU().x;
+        u.y = varUY/average_iter - getavgU().y*getavgU().y;
+        u.z = varUZ/average_iter - getavgU().z*getavgU().z;
+        return u;
+}
+CudaDeviceFunction vector_t getReStr(){
+        vector_t st;
+        st.x = varUYUZ/average_iter - getavgU().y*getavgU().z;
+        st.y = varUXUZ/average_iter - getavgU().x*getavgU().z;
+        st.z = varUXUY/average_iter - getavgU().x*getavgU().y;
+        return st;
+}
+CudaDeviceFunction real_t getKinE(){
+	real_t ke;
+	ke = 0.5*(getvarU().x + getvarU().y + getvarU().z);
+	return ke;
+}
+#endif
 CudaDeviceFunction float2 Color() {
         float2 ret;
         vector_t u = getU();
@@ -61,66 +93,12 @@ CudaDeviceFunction void BounceBack()
 
 CudaDeviceFunction void SymmetryY()
 {
-real_t tmp;
-tmp = f010;
-f010 = f020;
-f020 = tmp;
-tmp = f011;
-f011 = f021;
-f021 = tmp;
-tmp = f012;
-f012 = f022;
-f022 = tmp;
-tmp = f210;
-f210 = f220;
-f220 = tmp;
-tmp = f110;
-f110 = f120;
-f120 = tmp;
-tmp = f211;
-f211 = f221;
-f221 = tmp;
-tmp = f212;
-f212 = f222;
-f222 = tmp;
-tmp = f111;
-f111 = f121;
-f121 = tmp;
-tmp = f112;
-f112 = f122;
-f122 = tmp;
+<?R FullSymmetryY() ?>
 }
 
 CudaDeviceFunction void SymmetryZ()
 {
-real_t tmp;
-tmp = f001;
-f001 = f002;
-f002 = tmp;
-tmp = f021;
-f021 = f022;
-f022 = tmp;
-tmp = f011;
-f011 = f012;
-f012 = tmp;
-tmp = f201;
-f201 = f202;
-f202 = tmp;
-tmp = f101;
-f101 = f102;
-f102 = tmp;
-tmp = f221;
-f221 = f222;
-f222 = tmp;
-tmp = f211;
-f211 = f212;
-f212 = tmp;
-tmp = f121;
-f121 = f122;
-f122 = tmp;
-tmp = f111;
-f111 = f112;
-f112 = tmp;
+<?R FullSymmetryZ() ?>
 }
 
 CudaDeviceFunction void EVelocity()
@@ -243,6 +221,9 @@ f010=f020;
 
 CudaDeviceFunction void Run() {
     switch (NodeType & NODE_BOUNDARY) {
+	case NODE_WVelocityTurbulent:
+		WVelocityTurbulent();
+		break;
 	case NODE_TopSymmetry:
 		TopSymmetry();
 		break;
@@ -292,153 +273,43 @@ CudaDeviceFunction void SetEquilibrum(real_t rho, real_t Jx, real_t Jy, real_t J
 }
 
 CudaDeviceFunction void Init() {
-	
-	SetEquilibrum(1.0 + Pressure * 3.0, 0.0, 0.0, 0.0);
-	
-	f_old000 = f000; 
-	f_old100 = 	f100;
-	f_old200 = 	f200;
-	f_old010 = 	f010;
-	f_old110 = 	f110;
-	f_old210 = 	f210;
-	f_old020 = 	f020;
-f_old120 = 	f120;
-f_old220 = 	f220;
-f_old001 = 	f001;
-f_old101 = 	f101;
-f_old201 = 	f201;
-f_old011 = 	f011;
-f_old111 = 	f111;
-f_old211 = 	f211;
-f_old021 = 	f021;
-f_old121 = 	f121;
-f_old221 = 	f221;
-f_old002 = 	f002;
-f_old102 = 	f102;
-f_old202 = 	f202;
-f_old012 = 	f012;
-f_old112 = 	f112;
-f_old212 = 	f212;
-f_old022 = 	f022;
-f_old122 = 	f122;
-f_old222 = 	f222;
-
+	vector_t ST = SyntheticTurbulence(0);
+	ST.x = Turbulence*ST.x;
+	ST.y = Turbulence*ST.y;
+	ST.z = Turbulence*ST.z; 
+	SynthTX = ST.x;
+	SynthTY = ST.y;
+	SynthTZ = ST.z;
+	ST.x = ST.x + Velocity;	
+	SetEquilibrum(1.0 + Pressure * 3.0, ST.x, ST.y, ST.z);
 }
 
-/*
-//this function gets the interploated distance from flag
-CudaDeviceFunction real_t ConvertToFloat(unsigned char c)
-{
-	real_t f = -1.0;
+CudaDeviceFunction void WVelocityTurbulent() {
+        real_t k_aa = exp(-1/constContainer.ST.TimeWN);
+        real_t k_bb =  sqrt(1 - k_aa*k_aa);
+       	vector_t ST = SyntheticTurbulence(0);
+        ST.x = Turbulence*ST.x*k_bb + SynthTX*k_aa;
+        ST.y = Turbulence*ST.y*k_bb + SynthTY*k_aa;
+       	ST.z = Turbulence*ST.z*k_bb + SynthTZ*k_aa; 
+        SynthTX = ST.x;
+        SynthTY = ST.y;
+        SynthTZ = ST.z;
+        ST.x = ST.x + Velocity;
+	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ST.x"),V3=c(PV("ST.x"),PV("ST.y"),PV("ST.z"))) ?> 
 
-	if( c >=0 && c <=200){
-		f = c * 0.005;
-		//printf("char %d in 0-200 range. Returning %lf\n", c, f );
-		return f;
-	}
-	if( c == 255){
-		//printf(" char %d marks no contact - returning -1.0\n", c);
-		return -1.0;
-	}
-
-	if( c > 200 && c < 255){
-		//printf("Unclassified %d value within 201 - 254 - returning -10.0\n", c);
-		f=-10.0;
-		return f;
-		}
-
-	return f;
-	
 }
-*/
 
 CudaDeviceFunction void CollisionMRT()
 {	
  	real_t w[10] = {1.0/(3*nu+0.5),1.,1.,1.,1.,1.,1.,1.,1.,1.};
- 	if ((NodeType & NODE_BOUNDARY) != 0){
-		w[0] = 1.0/(3*nubuffer+0.5);
-	}
+ 	if ((NodeType & NODE_BOUNDARY) != 0) w[0] = 1.0/(3*nubuffer+0.5);
+
 	w[1] = 8.*(2. - w[0])/(8. - w[0]);
-	
-	
+	 
 	real_t rho = f222 + f122 + f022 + f212 + f112 + f012 + f202 + f102 + f002 + f221 + f121 + f021 + f211 + f111 + f011 + f201 + f101 + f001 + f220 + f120 + f020 + f210 + f110 + f010 + f200 + f100 + f000;
-	real_t Jx,Jy, Jz;
-	
-	Jx = -f222 + f122 - f212 + f112 - f202 + f102 - f221 + f121 - f211 + f111 - f201 + f101 - f220 + f120 - f210 + f110 - f200 + f100;
-	Jy = -f222 - f122 - f022 + f212 + f112 + f012 - f221 - f121 - f021 + f211 + f111 + f011 - f220 - f120 - f020 + f210 + f110 + f010;
-	Jz = -f222 - f122 - f022 - f212 - f112 - f012 - f202 - f102 - f002 + f221 + f121 + f021 + f211 + f111 + f011 + f201 + f101 + f001;
-	
-	/*  equilibrium variables (stored under cxxx ) Later on, c are obviously used as cumulants*/
-	//real_t c000 = ( rho*2. + ( -Jz*Jz - Jy*Jy - Jx*Jx )/rho*3. )*4./27.;
-	
-	<?R
-	cumulants = paste("c",P$x,P$y,P$z,sep="");
-	for (i in cumulants) { ?>
-	real_t <?%s i ?>;
-	<?R } ?>	
-	
-	 c100 = ( rho*2. + ( Jx*2. + ( -Jz*Jz - Jy*Jy + Jx*Jx*2. )/rho )*3. )/27.;
-	 c200 = ( rho*2. + ( -Jx*2. + ( -Jz*Jz - Jy*Jy + Jx*Jx*2. )/rho )*3. )/27.;
-	 c010 = ( rho*2. + ( Jy*2. + ( -Jz*Jz - Jx*Jx + Jy*Jy*2. )/rho )*3. )/27.;
-	 c110 = rho*0.0185185185185185 + ( -Jz*Jz/rho + ( Jx + Jy + ( Jx*Jx + ( Jy + Jx*3. )*Jy )/rho )*2. )/36.;
-	 c210 = rho*0.0185185185185185 + ( -Jz*Jz/rho + ( Jy - Jx + ( Jy*Jy + ( Jx - Jy*3. )*Jx )/rho )*2. )/36.;
-	 c020 = ( rho*2. + ( -Jy*2. + ( -Jz*Jz - Jx*Jx + Jy*Jy*2. )/rho )*3. )/27.;
-	 c120 = rho*0.0185185185185185 + ( -Jz*Jz/rho + ( -Jy + Jx + ( Jy*Jy + ( Jx - Jy*3. )*Jx )/rho )*2. )/36.;
-	 c220 = rho*0.0185185185185185 + ( -Jz*Jz/rho + ( -Jy - Jx + ( Jy*Jy + ( Jx + Jy*3. )*Jx )/rho )*2. )/36.;
-	 c001 = ( rho*2. + ( Jz*2. + ( -Jy*Jy - Jx*Jx + Jz*Jz*2. )/rho )*3. )/27.;
-	 c101 = rho*0.0185185185185185 + ( -Jy*Jy/rho + ( Jz + Jx + ( Jz*Jz + ( Jx + Jz*3. )*Jx )/rho )*2. )/36.;
-	 c201 = rho*0.0185185185185185 + ( -Jy*Jy/rho + ( Jz - Jx + ( Jz*Jz + ( Jx - Jz*3. )*Jx )/rho )*2. )/36.;
-	 c011 = rho*0.0185185185185185 + ( -Jx*Jx/rho + ( Jz + Jy + ( Jz*Jz + ( Jy + Jz*3. )*Jy )/rho )*2. )/36.;
-	 c111 = ( rho + ( Jz + Jy + Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( Jz*Jy + ( Jz + Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	 c211 = ( rho + ( Jz + Jy - Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( Jz*Jy + ( -Jz - Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	 c021 = rho*0.0185185185185185 + ( -Jx*Jx/rho + ( Jz - Jy + ( Jz*Jz + ( Jy - Jz*3. )*Jy )/rho )*2. )/36.;
-	 c121 = ( rho + ( Jz - Jy + Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( -Jz*Jy + ( Jz - Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	 c221 = ( rho + ( Jz - Jy - Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( -Jz*Jy + ( -Jz + Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	 c002 = ( rho*2. + ( -Jz*2. + ( -Jy*Jy - Jx*Jx + Jz*Jz*2. )/rho )*3. )/27.;
-	 c102 = rho*0.0185185185185185 + ( -Jy*Jy/rho + ( -Jz + Jx + ( Jz*Jz + ( Jx - Jz*3. )*Jx )/rho )*2. )/36.;
-	 c202 = rho*0.0185185185185185 + ( -Jy*Jy/rho + ( -Jz - Jx + ( Jz*Jz + ( Jx + Jz*3. )*Jx )/rho )*2. )/36.;
-	 c012 = rho*0.0185185185185185 + ( -Jx*Jx/rho + ( -Jz + Jy + ( Jz*Jz + ( Jy - Jz*3. )*Jy )/rho )*2. )/36.;
-	 c112 = ( rho + ( -Jz + Jy + Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( -Jz*Jy + ( -Jz + Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	 c212 = ( rho + ( -Jz + Jy - Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( -Jz*Jy + ( Jz - Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	 c022 = rho*0.0185185185185185 + ( -Jx*Jx/rho + ( -Jz - Jy + ( Jz*Jz + ( Jy + Jz*3. )*Jy )/rho )*2. )/36.;
-	 c122 = ( rho + ( -Jz - Jy + Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( Jz*Jy + ( -Jz - Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	 c222 = ( rho + ( -Jz - Jy - Jx + ( Jz*Jz + Jy*Jy + Jx*Jx + ( Jz*Jy + ( Jz + Jy )*Jx )*3. )/rho )*3. )*0.00462962962962963;
-	
-	real_t Q; // link proportion converted to float/double
-	real_t f;  //auxiliary variable
-	real_t omega = w[0];
-	
-	if( (NodeType & NODE_HO_BOUNDARY) == NODE_QIBB){
-		if (Q100!= 255){	Q= 0.005* Q100;	f=0.5*(f_old100-f_old200)+1./(2*(1-omega))*(f_old100+f_old200-omega*(c100+c200));	f200 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old100+f_old200);}
-		if (Q200!= 255){	Q= 0.005* Q200;	f=0.5*(f_old200-f_old100)+1./(2*(1-omega))*(f_old200+f_old100-omega*(c200+c100));	f100 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old200+f_old100);}
-		if (Q010!= 255){	Q= 0.005* Q010;	f=0.5*(f_old010-f_old020)+1./(2*(1-omega))*(f_old010+f_old020-omega*(c010+c020));	f020 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old010+f_old020);}
-		if (Q110!= 255){	Q= 0.005* Q110;	f=0.5*(f_old110-f_old220)+1./(2*(1-omega))*(f_old110+f_old220-omega*(c110+c220));	f220 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old110+f_old220);}
-		if (Q210!= 255){	Q= 0.005* Q210;	f=0.5*(f_old210-f_old120)+1./(2*(1-omega))*(f_old210+f_old120-omega*(c210+c120));	f120 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old210+f_old120);}
-		if (Q020!= 255){	Q= 0.005* Q020;	f=0.5*(f_old020-f_old010)+1./(2*(1-omega))*(f_old020+f_old010-omega*(c020+c010));	f010 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old020+f_old010);}
-		if (Q120!= 255){	Q= 0.005* Q120;	f=0.5*(f_old120-f_old210)+1./(2*(1-omega))*(f_old120+f_old210-omega*(c120+c210));	f210 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old120+f_old210);}
-		if (Q220!= 255){	Q= 0.005* Q220;	f=0.5*(f_old220-f_old110)+1./(2*(1-omega))*(f_old220+f_old110-omega*(c220+c110));	f110 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old220+f_old110);}
-		if (Q001!= 255){	Q= 0.005* Q001;	f=0.5*(f_old001-f_old002)+1./(2*(1-omega))*(f_old001+f_old002-omega*(c001+c002));	f002 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old001+f_old002);}
-		if (Q101!= 255){	Q= 0.005* Q101;	f=0.5*(f_old101-f_old202)+1./(2*(1-omega))*(f_old101+f_old202-omega*(c101+c202));	f202 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old101+f_old202);}
-		if (Q201!= 255){	Q= 0.005* Q201;	f=0.5*(f_old201-f_old102)+1./(2*(1-omega))*(f_old201+f_old102-omega*(c201+c102));	f102 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old201+f_old102);}
-		if (Q011!= 255){	Q= 0.005* Q011;	f=0.5*(f_old011-f_old022)+1./(2*(1-omega))*(f_old011+f_old022-omega*(c011+c022));	f022 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old011+f_old022);}
-		if (Q111!= 255){	Q= 0.005* Q111;	f=0.5*(f_old111-f_old222)+1./(2*(1-omega))*(f_old111+f_old222-omega*(c111+c222));	f222 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old111+f_old222);}
-		if (Q211!= 255){	Q= 0.005* Q211;	f=0.5*(f_old211-f_old122)+1./(2*(1-omega))*(f_old211+f_old122-omega*(c211+c122));	f122 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old211+f_old122);}
-		if (Q021!= 255){	Q= 0.005* Q021;	f=0.5*(f_old021-f_old012)+1./(2*(1-omega))*(f_old021+f_old012-omega*(c021+c012));	f012 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old021+f_old012);}
-		if (Q121!= 255){	Q= 0.005* Q121;	f=0.5*(f_old121-f_old212)+1./(2*(1-omega))*(f_old121+f_old212-omega*(c121+c212));	f212 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old121+f_old212);}
-		if (Q221!= 255){	Q= 0.005* Q221;	f=0.5*(f_old221-f_old112)+1./(2*(1-omega))*(f_old221+f_old112-omega*(c221+c112));	f112 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old221+f_old112);}
-		if (Q002!= 255){	Q= 0.005* Q002;	f=0.5*(f_old002-f_old001)+1./(2*(1-omega))*(f_old002+f_old001-omega*(c002+c001));	f001 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old002+f_old001);}
-		if (Q102!= 255){	Q= 0.005* Q102;	f=0.5*(f_old102-f_old201)+1./(2*(1-omega))*(f_old102+f_old201-omega*(c102+c201));	f201 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old102+f_old201);}
-		if (Q202!= 255){	Q= 0.005* Q202;	f=0.5*(f_old202-f_old101)+1./(2*(1-omega))*(f_old202+f_old101-omega*(c202+c101));	f101 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old202+f_old101);}
-		if (Q012!= 255){	Q= 0.005* Q012;	f=0.5*(f_old012-f_old021)+1./(2*(1-omega))*(f_old012+f_old021-omega*(c012+c021));	f021 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old012+f_old021);}
-		if (Q112!= 255){	Q= 0.005* Q112;	f=0.5*(f_old112-f_old221)+1./(2*(1-omega))*(f_old112+f_old221-omega*(c112+c221));	f221 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old112+f_old221);}
-		if (Q212!= 255){	Q= 0.005* Q212;	f=0.5*(f_old212-f_old121)+1./(2*(1-omega))*(f_old212+f_old121-omega*(c212+c121));	f121 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old212+f_old121);}
-		if (Q022!= 255){	Q= 0.005* Q022;	f=0.5*(f_old022-f_old011)+1./(2*(1-omega))*(f_old022+f_old011-omega*(c022+c011));	f011 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old022+f_old011);}
-		if (Q122!= 255){	Q= 0.005* Q122;	f=0.5*(f_old122-f_old211)+1./(2*(1-omega))*(f_old122+f_old211-omega*(c122+c211));	f211 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old122+f_old211);}
-		if (Q222!= 255){	Q= 0.005* Q222;	f=0.5*(f_old222-f_old111)+1./(2*(1-omega))*(f_old222+f_old111-omega*(c222+c111));	f111 = (1.-Q)/(1+Q)*f+Q/(1.+Q)*(f_old222+f_old111);}
-	}
-
-
-	f000 = f200 + f100 + f000; f100 = -f200 + f100; f200 = f100 + f200*2.; 
+	 
+	 
+f000 = f200 + f100 + f000; f100 = -f200 + f100; f200 = f100 + f200*2.; 
 f010 = f210 + f110 + f010; f110 = -f210 + f110; f210 = f110 + f210*2.; 
 f020 = f220 + f120 + f020; f120 = -f220 + f120; f220 = f120 + f220*2.; 
 f001 = f201 + f101 + f001; f101 = -f201 + f101; f201 = f101 + f201*2.; 
@@ -465,6 +336,13 @@ f210 = f212 + f211 + f210; f211 = -f212 + f211; f212 = f211 + f212*2.;
 f020 = f022 + f021 + f020; f021 = -f022 + f021; f022 = f021 + f022*2.; 
 f120 = f122 + f121 + f120; f121 = -f122 + f121; f122 = f121 + f122*2.; 
 f220 = f222 + f221 + f220; f221 = -f222 + f221; f222 = f221 + f222*2.; 
+
+
+<?R
+	cumulants = paste("c",P$x,P$y,P$z,sep="");
+	for (i in cumulants) { ?>
+	real_t <?%s i ?>;
+<?R } ?>	
 
 
 c100 = f100/f000;
@@ -549,6 +427,7 @@ u.z = c001 + ForceZ/(2.*f000);
 		<?%s i ?> = 0.0;
 	<?R } ?>
 	
+	
 /////////
 f000 = f000;
 f100 = c100*f000;
@@ -618,7 +497,7 @@ varUXUZ = varUXUZ + getU().x*getU().z;
 varUYUZ = varUYUZ + getU().y*getU().z;
 #endif
 
-switch (NodeType & NODE_ADDITIONALS){
+switch (NodeType & NODE_ADDITIONALS) {
 		//printf(" workin' on adds")
                 
                 case NODE_XYslice1:
@@ -656,6 +535,7 @@ switch (NodeType & NODE_ADDITIONALS){
                 case NODE_YZslice2:
                 AddToYZrho2(rho);
                 break;
+                
         }
 
 }

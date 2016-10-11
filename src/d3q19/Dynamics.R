@@ -43,15 +43,18 @@ AddSetting(name="InletVelocity", default="0m/s", comment='Inlet velocity', unit=
 AddSetting(name="InletPressure", InletDensity='1.0+InletPressure*3', default="0Pa", comment='Inlet pressure', unit="1Pa")
 AddSetting(name="InletDensity", default=1, comment='Inlet density', unit="1kg/m3")
 
-AddSetting(name="ForceX", comment='Force force X')
-AddSetting(name="ForceY", comment='Force force Y')
-AddSetting(name="ForceZ", comment='Force force Z')
+AddSetting(name="ForceX", comment='Force X')
+AddSetting(name="ForceY", comment='Force Y')
+AddSetting(name="ForceZ", comment='Force Z')
 
 AddGlobal(name="Flux", comment='Volume flux', unit="m3/s")
 
-AddNodeType("XYslice",group="ADDITIONALS");
-AddNodeType("XZslice",group="ADDITIONALS");
-AddNodeType("YZslice",group="ADDITIONALS");
+AddNodeType("XYslice",group="ADDITIONALS")
+AddNodeType("XZslice",group="ADDITIONALS")
+AddNodeType("YZslice",group="ADDITIONALS")
+
+
+AddNodeType("QIBB",group="HO_BOUNDARY")
 
 #AddGlobal(name="XFlux", comment='Volume flux', unit="m3/s")
 #AddGlobal(name="YFlux", comment='Volume flux', unit="m3/s")

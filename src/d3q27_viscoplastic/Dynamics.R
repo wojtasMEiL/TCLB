@@ -48,6 +48,8 @@ AddNodeType("SPressure_ZouHe", "BOUNDARY")
 AddNodeType("EPressure_ZouHe", "BOUNDARY")
 AddNodeType("WPressure_ZouHe", "BOUNDARY")
 
+AddNodeType("QIBB",group="HO_BOUNDARY")
+
 #reporting fluxes
 AddNodeType("XYslice1",group="ADDITIONALS")
 AddNodeType("XZslice1",group="ADDITIONALS")

@@ -14,8 +14,8 @@
 		<Params GalileanCorrection="1"/> 
 	</Model>
 	<Failcheck Iterations="1000"/>
-	<VTK Iterations="5000"/>
+	<VTK Iterations="1000"/>
 	<Log Iterations="100"/>
-	<Solve Iterations="40000"/>
+	<Solve Iterations="4000"/>
 <SaveBinary file="QIBB_test_kulka"/>
 </CLBConfig>
