@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+         <Geometry nx="416" ny="160" nz="160">
+		<MRT><Box/></MRT>
+		<WVelocityBB mask="ALL" name="Inlet"><Box nx="1" dx="1"/></WVelocityBB>
+		<EOutlet><Box nx="1" dx="-1"/></EOutlet> <!-- remember to put this one in front of the declaration of domain walls, otherwise it will consume mass!!! -->
+		<Wall mask="ALL" dx="100" dy="0" dz="0">
+			<Text file="geometries/p10_25_cx3_160.dat" nx="160" ny="160" nz="160" />
+		</Wall>
+		<XYslice1><Box dx="95" nx="1"/></XYslice1>
+		<XYslice2><Box dx="265" nx="1"/></XYslice2>
+		<Point01><Box dx="5" nx="155" dy="2" ny="1" dz="80" nz="1" /></Point01>
+		<Point02><Box dx="5" nx="155" dy="80" ny="1" dz="2" nz="1"  /></Point02>
+		<Point03><Box dx="5" nx="266" dy="2" ny="1" dz="80" nz="1" /></Point03>
+		<Point04><Box  dx="5" nx="266" dy="80" ny="1" dz="2" nz="1" /></Point04>
+		<Wall><Box dy="0" ny="1"/></Wall>
+		<Wall><Box dz="0" nz="1"/></Wall>
+		 <!-- this is a comment!! So that you remember syntax... --->
+        </Geometry>
+        <Model>
+                <Params nu="0.001000"/>
+		<Params Velocity="0.01"/>
+	</Model>
+	<VTK Iterations="5000"/>
+	<Log Iterations="500"/>
+	<Failcheck Iterations="5000"/>
+	<Solve Iterations="100000"/>
+</CLBConfig>

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+         <Geometry nx="256" ny="256" nz="256">
+		<MRT><Box/></MRT>
+		<QIBB>
+			<STL file="geometries/p30u45_320x320x320.stl" side="surface"/> 
+		</QIBB>		
+		<XYslice1><Box dx="95" nx="1"/></XYslice1>
+		<XYslice2><Box dx="265" nx="1"/></XYslice2>
+		<Point01><Box dx="5" nx="1" dy="2" ny="1" dz="80" nz="1" /></Point01>
+		<Point02><Box dx="5" nx="1" dy="80" ny="1" dz="2" nz="1"  /></Point02>
+		<Point03><Box dx="5" nx="1" dy="2" ny="1" dz="80" nz="1" /></Point03>
+		<Point04><Box  dx="5" nx="1" dy="80" ny="1" dz="2" nz="1" /></Point04>
+		<Wall><Box dy="0" ny="1"/></Wall>
+		<Wall><Box dz="0" nz="1"/></Wall>
+		 <!-- this is a comment!! So that you remember syntax... --->
+        </Geometry>
+        <Model>
+                <Params nu="0.001"/>
+		<Params ForceX="0.000001"/>
+	</Model>
+	<VTK Iterations="50"/>
+	<Log Iterations="25"/>
+	<Failcheck Iterations="5000"/>
+	 <!-- Solve must always be at the end inorder for the previous stuff to be executed --->
+	<Solve Iterations="50"/>
+</CLBConfig>

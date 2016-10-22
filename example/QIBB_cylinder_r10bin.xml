@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+        <Geometry nx="64" ny="64" nz="32">
+		<MRT><Box/></MRT>
+		<QIBB>
+			<QIBB file="example/cylinder_r010fn060_at32.bin"/>
+		</QIBB>
+		<XYslice1><Box dx="32"  nx="1" dy="32"  ny="1" dz="4"  nz="1"/></XYslice1>
+	</Geometry>
+	<Model>
+		<Params ForceZ="1e-6"/>
+		<Params nu="0.002"/>
+		<Params GalileanCorrection="1"/> 
+	</Model>
+	<Failcheck Iterations="5000"/>
+	<VTK Iterations="250"/>
+	<Log Iterations="100"/>
+	<Solve Iterations="2000"/>
+</CLBConfig>

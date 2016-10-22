@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<CLBConfig version="2.0" output="output/">
+         <Geometry nx="192" ny="32" nz="32">
+		<MRT><Box/></MRT>
+		<!--  <WVelocityBB mask="ALL" name="Inlet"><Box nx="1" dx="1"/></WVelocityBB> 
+		<WVelocityBB name="Inlet"><Box nx="1" dx="0"/></WVelocityBB> 
+		<WVelocity name="Inlet"><Box nx="1" dx="0"/></WVelocity>
+		<WVelocityBB name="Inlet"><Box nx="1" dx="0"/></WVelocityBB>  --->
+		<WVelocityBB name="Inlet"><Box nx="1" dx="0"/></WVelocityBB>
+		<EOutlet><Box nx="1" dx="-1"/></EOutlet> <!-- remember to put this one in front of the declaration of domain walls, otherwise it will consume mass!!! -->
+		<Wall><Box dy="0" ny="1"/></Wall>
+		<Wall><Box dz="0" nz="1"/></Wall>
+		<!-- <EPressure><Box nx="1" dx="-1"/></EPressure> --->
+		<XYslice1><Box dx="5" nx="1"/></XYslice1>
+		<XYslice2><Box dx="-5" nx="1"/></XYslice2>
+		<Point01><Box dx="25" nx="1" dy="2" ny="1" dz="19" nz="1" /></Point01>
+		<Point02><Box dx="25" nx="1" dy="19" ny="1" dz="1" nz="1"  /></Point02>
+		<Point03><Box dx="166" nx="1" dy="2" ny="1" dz="19" nz="1" /></Point03>
+		<Point04><Box dx="166" nx="1" dy="19" ny="1" dz="1" nz="1" /></Point04>
+		 <!-- this is a comment!! So that you remember its syntax... --->
+        </Geometry>
+        <Model>
+                <Params nu="0.001000"/>
+		<Params Velocity="0.01"/>
+		<Params Size_Lx="192"/>
+		<Params Size_Ly="32"/>
+		<Params Size_Lz="32"/>
+	</Model>
+	<VTK Iterations="5000"/>
+	<Log Iterations="1000"/>
+	<Failcheck Iterations="5000"/>
+	<Solve Iterations="50000"/>
+</CLBConfig>
